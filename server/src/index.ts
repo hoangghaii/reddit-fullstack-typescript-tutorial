@@ -9,7 +9,7 @@ import 'reflect-metadata';
 import { buildSchema } from 'type-graphql';
 import { createConnection } from 'typeorm';
 import { Post, User } from './entities';
-import { HelloResolver } from './resolvers';
+import { HelloResolver, UserResolver } from './resolvers';
 
 const main = async () => {
   await createConnection({
@@ -25,9 +25,12 @@ const main = async () => {
   const app = express();
 
   const apolloServer = new ApolloServer({
-    schema: await buildSchema({ resolvers: [HelloResolver], validate: false }),
+    schema: await buildSchema({
+      resolvers: [HelloResolver, UserResolver],
+      validate: false,
+    }),
     context: ({ req, res }): Context => ({ req, res }),
-    plugins: [ApolloServerPluginLandingPageGraphQLPlayground],
+    plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
   });
 
   await apolloServer.start();

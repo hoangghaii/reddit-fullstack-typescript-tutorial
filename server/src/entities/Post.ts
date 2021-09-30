@@ -1,3 +1,4 @@
+import { ObjectType } from 'type-graphql';
 import {
   BaseEntity,
   Column,
@@ -7,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+@ObjectType()
 @Entity() //db table Post
 export class Post extends BaseEntity {
   @PrimaryGeneratedColumn()
