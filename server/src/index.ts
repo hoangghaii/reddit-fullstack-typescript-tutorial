@@ -10,6 +10,10 @@ import { buildSchema } from 'type-graphql';
 import { createConnection } from 'typeorm';
 import { Post, User } from './entities';
 import { HelloResolver, UserResolver } from './resolvers';
+import mongoose from 'mongoose';
+import MongoStore from 'connect-mongo';
+import session from 'express-session';
+import { COOKIE_NAME, __prod__ } from './constants';
 
 const main = async () => {
   await createConnection({
@@ -23,6 +27,35 @@ const main = async () => {
   });
 
   const app = express();
+
+  // Session/Cookie store
+  const mongoUrl = `mongodb+srv://${process.env.SESSION_DB_USERNAME_DEV_PROD}:${process.env.SESSION_DB_PASSWORD_DEV_PROD}@cluster0.fpjhe.mongodb.net/Cluster0?retryWrites=true&w=majority`;
+  await mongoose
+    .connect(mongoUrl)
+    .then(() => {
+      console.log('MongoDB Connected');
+    })
+    .catch((err) => {
+      console.log(`Distribution API Database connection error occured -`, err);
+    });
+
+  app.set('trust proxy', 1);
+
+  app.use(
+    session({
+      name: COOKIE_NAME,
+      store: MongoStore.create({ mongoUrl }),
+      cookie: {
+        maxAge: 1000 * 60 * 60, // one hour
+        httpOnly: true, // JS front end cannot access the cookie
+        secure: __prod__, // cookie only works in https
+        sameSite: 'none',
+      },
+      secret: process.env.SESSION_SECRET_DEV_PROD as string,
+      saveUninitialized: false, // don't save empty sessions, right from the start
+      resave: false,
+    }),
+  );
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
