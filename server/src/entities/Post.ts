@@ -17,6 +17,10 @@ export class Post extends BaseEntity {
 
   @Field()
   @Column()
+  userId!: number;
+
+  @Field()
+  @Column()
   title!: string;
 
   @Field()

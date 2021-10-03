@@ -1,5 +1,12 @@
-import { AuthenticationError } from 'apollo-server-errors';
-import { Arg, Ctx, ID, Mutation, Query, Resolver } from 'type-graphql';
+import {
+  Arg,
+  Ctx,
+  ID,
+  Mutation,
+  Query,
+  Resolver,
+  UseMiddleware,
+} from 'type-graphql';
 import { Post } from '../entities';
 import {
   Context,
@@ -7,11 +14,13 @@ import {
   PostMutationResponse,
   UpdatePostInput,
 } from '../types';
+import { checkAuth } from './../middleware';
 
 @Resolver()
 export class PostResolver {
   //create new post
   @Mutation((_return) => PostMutationResponse)
+  @UseMiddleware(checkAuth)
   async createPost(
     @Arg('createPostInput') { title, text }: CreatePostInput,
   ): Promise<PostMutationResponse> {
@@ -80,6 +89,7 @@ export class PostResolver {
 
   //update post
   @Mutation((_return) => PostMutationResponse)
+  @UseMiddleware(checkAuth)
   async updatePost(
     @Arg('updatePostInput') { id, title, text }: UpdatePostInput,
   ): Promise<PostMutationResponse> {
@@ -119,17 +129,12 @@ export class PostResolver {
 
   //delete post
   @Mutation((_return) => PostMutationResponse)
+  @UseMiddleware(checkAuth)
   async deletePost(
     @Arg('id', (_type) => ID) id: number,
     @Ctx() { req }: Context,
   ): Promise<PostMutationResponse> {
     try {
-      console.log(req.session.userId);
-      if (!req.session.userId)
-        throw new AuthenticationError(
-          'Not authenticated to perform GraphQL operation',
-        );
-
       const existingPost = await Post.findOne(id);
 
       if (!existingPost)
@@ -143,6 +148,13 @@ export class PostResolver {
               message: 'id not found',
             },
           ],
+        };
+
+      if (existingPost.userId !== req.session.userId)
+        return {
+          code: 401,
+          success: false,
+          message: 'Unauthorised',
         };
 
       await Post.delete(id);
