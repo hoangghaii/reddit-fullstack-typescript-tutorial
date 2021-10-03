@@ -1,16 +1,22 @@
 import argon2 from 'argon2';
-import { RegisterInput, UserMutationResponse, LoginInput } from '../types';
 import { Arg, Ctx, Mutation, Resolver } from 'type-graphql';
 import { User } from '../entities';
+import {
+  Context,
+  LoginInput,
+  RegisterInput,
+  UserMutationResponse,
+} from '../types';
 import { validateRegisterInput } from '../utils';
-import { Context } from 'apollo-server-core';
+import { COOKIE_NAME } from './../constants';
 
 @Resolver()
 export class UserResolver {
   //register
-  @Mutation((_returns) => UserMutationResponse)
+  @Mutation((_return) => UserMutationResponse)
   async register(
     @Arg('registerInput') registerInput: RegisterInput,
+    @Ctx() { req }: Context,
   ): Promise<UserMutationResponse> {
     const validateRegisterInputErrors = validateRegisterInput(registerInput);
     if (validateRegisterInputErrors !== null)
@@ -49,11 +55,15 @@ export class UserResolver {
         email,
       });
 
+      await User.save(newUser);
+
+      req.session.userId = newUser.id;
+
       return {
         code: 200,
         success: true,
         message: 'User registration successfull',
-        user: await User.save(newUser),
+        user: newUser,
       };
     } catch (error) {
       console.log(error);
@@ -109,7 +119,8 @@ export class UserResolver {
           ],
         };
 
-      //session: userId = existingUser.id
+      //Create session and return cookie
+      req.session.userId = existingUser.id;
 
       return {
         code: 200,
@@ -126,4 +137,23 @@ export class UserResolver {
       };
     }
   }
+
+  //logout
+  @Mutation((_return) => Boolean)
+  logout(@Ctx() { req, res }: Context): Promise<boolean> {
+    return new Promise((resolve, _reject) => {
+      res.clearCookie(COOKIE_NAME);
+      req.session.destroy((error) => {
+        if (error) {
+          console.log(`DESTROYING SESSION ERROR - ${error}`);
+          resolve(false);
+        }
+        resolve(true);
+      });
+    });
+  }
+
+  //forgotPassword
+
+  //changePassword
 }

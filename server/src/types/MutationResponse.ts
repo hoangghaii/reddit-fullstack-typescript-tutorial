@@ -1,5 +1,5 @@
 import { Field, InterfaceType } from 'type-graphql';
-
+import { FieldError } from '.';
 @InterfaceType()
 export abstract class IMutationResponse {
   @Field()
@@ -10,4 +10,7 @@ export abstract class IMutationResponse {
 
   @Field({ nullable: true })
   message?: string;
+
+  @Field((_type) => [FieldError], { nullable: true })
+  errors?: FieldError[];
 }

@@ -1,19 +1,17 @@
 require('dotenv').config();
-import {
-  ApolloServerPluginLandingPageGraphQLPlayground,
-  Context,
-} from 'apollo-server-core';
-import { ApolloServer } from 'apollo-server-express';
-import express from 'express';
 import 'reflect-metadata';
+import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
+import { ApolloServer } from 'apollo-server-express';
+import MongoStore from 'connect-mongo';
+import express from 'express';
+import session from 'express-session';
+import mongoose from 'mongoose';
 import { buildSchema } from 'type-graphql';
 import { createConnection } from 'typeorm';
-import { Post, User } from './entities';
-import { HelloResolver, UserResolver } from './resolvers';
-import mongoose from 'mongoose';
-import MongoStore from 'connect-mongo';
-import session from 'express-session';
 import { COOKIE_NAME, __prod__ } from './constants';
+import { Post, User } from './entities';
+import { HelloResolver, PostResolver, UserResolver } from './resolvers';
+import { Context } from './types';
 
 const main = async () => {
   await createConnection({
@@ -46,6 +44,7 @@ const main = async () => {
       name: COOKIE_NAME,
       store: MongoStore.create({ mongoUrl }),
       cookie: {
+        path: '/',
         maxAge: 1000 * 60 * 60, // one hour
         httpOnly: true, // JS front end cannot access the cookie
         secure: __prod__, // cookie only works in https
@@ -59,7 +58,7 @@ const main = async () => {
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver, UserResolver],
+      resolvers: [HelloResolver, UserResolver, PostResolver],
       validate: false,
     }),
     context: ({ req, res }): Context => ({ req, res }),
