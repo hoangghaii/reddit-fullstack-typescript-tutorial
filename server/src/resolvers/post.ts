@@ -1,6 +1,6 @@
 import {
   Arg,
-  Ctx,
+  // Ctx,
   ID,
   Mutation,
   Query,
@@ -9,7 +9,7 @@ import {
 } from 'type-graphql';
 import { Post } from '../entities';
 import {
-  Context,
+  // Context,
   CreatePostInput,
   PostMutationResponse,
   UpdatePostInput,
@@ -132,7 +132,7 @@ export class PostResolver {
   @UseMiddleware(checkAuth)
   async deletePost(
     @Arg('id', (_type) => ID) id: number,
-    @Ctx() { req }: Context,
+    // @Ctx() { req }: Context,
   ): Promise<PostMutationResponse> {
     try {
       const existingPost = await Post.findOne(id);
@@ -150,12 +150,12 @@ export class PostResolver {
           ],
         };
 
-      if (existingPost.userId !== req.session.userId)
-        return {
-          code: 401,
-          success: false,
-          message: 'Unauthorised',
-        };
+      // if (existingPost.userId !== req.session.userId)
+      //   return {
+      //     code: 401,
+      //     success: false,
+      //     message: 'Unauthorised',
+      //   };
 
       await Post.delete(id);
 
